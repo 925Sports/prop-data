@@ -2,19 +2,24 @@ name: Update CSV from Google Sheet
 
 on:
   schedule:
-    - cron: "*/15 * * * *"  # Runs every 15 minutes
-  workflow_dispatch:      # Allows manual trigger from GitHub UI
+    - cron: "*/15 * * * *"    # Every 15 minutes
+  workflow_dispatch:          # Allows manual run from GitHub UI
 
 jobs:
   update-csv:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write           # This grants write access to the repo
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Download latest CSV
         run: |
-          curl -L -o combo-data.csv "https://docs.google.com/spreadsheets/d/e/2PACX-1vRYY3lCP1jiJ3x4cHr87LhcNraa7KGZRKFo1jOa9EoS5VuUEehS2faNZTTM0mhKutJ-t1CDeZF0leXh/pub?gid=1009829399&single=true&output=csv"
+          curl -L -o combo-data.csv \
+            "https://docs.google.com/spreadsheets/d/e/2PACX-1vRYY3lCP1jiJ3x4cHr87LhcNraa7KGZRKFo1jOa9EoS5VuUEehS2faNZTTM0mhKutJ-t1CDeZF0leXh/pub?gid=1009829399&single=true&output=csv"
 
       - name: Check for changes
         id: check-changes
@@ -27,6 +32,8 @@ jobs:
 
       - name: Commit and push if changed
         if: steps.check-changes.outputs.changed == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
